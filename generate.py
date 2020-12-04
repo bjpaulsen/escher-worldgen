@@ -1,14 +1,30 @@
 from constraint import *
 import escher
 
-world_width = 4
-world_length = 4
-world_height = 4
+world_width = 3
+world_length = 3
+world_height = 3
 
-def blocksAdjacent(location, adj):
+world = [(x, y, z) for x in range(world_width) for y in range(world_length) for z in range(world_height)]
+
+problem = Problem()
+
+
+
+def blockHasNeighbor(location, *adj):
+    print()
+    print(location)
+    print(adj)
     if location == 'b':
-        return 'b' in adj
-    return True # i think this is wrong, i think i need to create a constraint subclass?
+        for neighbor in adj:
+            if neighbor != '-':
+                return True
+    return False
+
+def onlyStairs(location):
+    if location == 's':
+        return True
+    return False
 
 # checks if an adjacent position is in the world
 # x y z is a legal position
@@ -28,9 +44,6 @@ def inRange(x, y, z, a, b, c):
     return True
 
 def generate():
-    world = [(x, y, z) for x in range(world_width) for y in range(world_length) for z in range(world_height)]
-
-    problem = Problem()
 
     # setup the 3D grid of locations to be filled in
     for x in range(world_width):
@@ -42,7 +55,26 @@ def generate():
         for y in range(world_length):
             for z in range(world_height):
                 adj = [(a, b, c) for a in range(x-1, x+2) for b in range(y-1, y+2) for c in range(z-1, z+2) if inRange(x, y, z, a, b, c)]
-                problem.addConstraint(blocksAdjacent, [(x, y, z), adj])
+                
+                # problem.addConstraint(SomeInSetConstraint(['-']), adj)
+                # problem.addConstraint(SomeInSetConstraint(['b']), adj)
+                # problem.addConstraint(FunctionConstraint(blockHasNeighbor, [(x, y, z)].extend(adj)))
+                # problem.addConstraint(InSetConstraint(['b']), [(1, 1, 1)])
+    
+
+    # problem.addConstraint(SomeInSetConstraint(['s']))
+    # problem.addConstraint(SomeInSetConstraint(['b']))
+    
+    solution = problem.getSolution()
+
+    world = []
+    for x in range(world_width):
+        for y in range(world_length):
+            for z in range(world_height):
+                # world[x][y][z] = solution[(x, y, z)]
+                print(solution[(x, y, z)], end='')
+            print()
+        print()
 
 if __name__ == '__main__':
     generate()
