@@ -10,7 +10,26 @@ world = [(x, y, z) for x in range(world_width) for y in range(world_length) for 
 problem = Problem()
 
 
+'''
+definitions:
+    neighbor - each block has 6 neighbors (unless it's against a wall)
 
+CONSTRAINT IDEAS (Test and see what works well)
+    1. Solid blocks must have a neighbor (can't be free floating)
+    2. Stairs must have at least 2 neighbors (places to walk to and from)
+    3. Stairs must have at least 2 adjacent neighboring air blocks (space to walk in)
+    4. Some minimum amount of air, blocks, stairs, etc
+
+OTHER THINGS TO IMPLEMENT
+    1. Instead of representing types of blocks as characters, represent them as classes with 
+    some basic information about the block.
+        - Stairs have info about which sides are walkable
+        - solid blocks or bridges etc. might have info about which decorations they have
+'''
+
+# The following constraints are for testing / experimenting purposes
+
+# This one isn't working, it causes the solution to be None. Why?
 def blockHasNeighbor(location, *adj):
     print()
     print(location)
@@ -21,6 +40,7 @@ def blockHasNeighbor(location, *adj):
                 return True
     return False
 
+# This constraint works! It ensures that the entire level is filled with stairs
 def onlyStairs(location):
     if location == 's':
         return True
