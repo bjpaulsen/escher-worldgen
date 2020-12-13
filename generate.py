@@ -1,13 +1,13 @@
 from constraint import *
 import escher
 
-world_width = 3
-world_length = 3
+world_width = 6
+world_length = 6
 world_height = 3
 
 world = [(x, y, z) for x in range(world_width) for y in range(world_length) for z in range(world_height)]
 
-problem = Problem()
+problem = Problem(RecursiveBacktrackingSolver())
 
 
 '''
@@ -29,16 +29,20 @@ OTHER THINGS TO IMPLEMENT
 
 # The following constraints are for testing / experimenting purposes
 
-# This one isn't working, it causes the solution to be None. Why?
+# blockHasNeighbor ensures that each block has at least one neighboring non-air space.
+# inputs: 
+#   - the current location being looked at. If it's a block, this constraint applies
+#   - a list of directly adjacent spaces. if any of these are non-air, the constraint passes
 def blockHasNeighbor(location, *adj):
-    print()
-    print(location)
-    print(adj)
-    if location == 'b':
+    # print()
+    # print("location: ", location)
+    # print("adj: ", adj)
+    if location == 'b' or location == 's':
         for neighbor in adj:
             if neighbor != '-':
                 return True
-    return False
+        return False
+    return True
 
 # This constraint works! It ensures that the entire level is filled with stairs
 def onlyStairs(location):
@@ -75,22 +79,22 @@ def generate():
         for y in range(world_length):
             for z in range(world_height):
                 adj = [(a, b, c) for a in range(x-1, x+2) for b in range(y-1, y+2) for c in range(z-1, z+2) if inRange(x, y, z, a, b, c)]
-                
-                # problem.addConstraint(SomeInSetConstraint(['-']), adj)
-                # problem.addConstraint(SomeInSetConstraint(['b']), adj)
-                # problem.addConstraint(FunctionConstraint(blockHasNeighbor, [(x, y, z)].extend(adj)))
-                # problem.addConstraint(InSetConstraint(['b']), [(1, 1, 1)])
+                blockNeighbors = [(x, y, z)]
+                blockNeighbors.extend(adj)
+                # print("blockNeighbors: ", blockNeighbors)
+                # problem.addConstraint(blockHasNeighbor, blockNeighbors)
     
 
-    # problem.addConstraint(SomeInSetConstraint(['s']))
-    # problem.addConstraint(SomeInSetConstraint(['b']))
+    problem.addConstraint(SomeInSetConstraint(['s'], 5))
+    problem.addConstraint(SomeInSetConstraint(['-'], 70))
+    # problem.addConstraint(SomeInSetConstraint(['b'], 5))
     
     solution = problem.getSolution()
 
     world = []
-    for x in range(world_width):
+    for z in range(world_height):
         for y in range(world_length):
-            for z in range(world_height):
+            for x in range(world_width):
                 # world[x][y][z] = solution[(x, y, z)]
                 print(solution[(x, y, z)], end='')
             print()
