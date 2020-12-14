@@ -1,8 +1,8 @@
 from constraint import *
 import escher
 
-world_width = 6
-world_length = 6
+world_width = 4
+world_length = 4
 world_height = 3
 
 world = [(x, y, z) for x in range(world_width) for y in range(world_length) for z in range(world_height)]
@@ -19,6 +19,8 @@ CONSTRAINT IDEAS (Test and see what works well)
     2. Stairs must have at least 2 neighbors (places to walk to and from)
     3. Stairs must have at least 2 adjacent neighboring air blocks (space to walk in)
     4. Some minimum amount of air, blocks, stairs, etc
+
+    * Stairs cannot be directly adjacent (cardinal) to other stairs?
 
 OTHER THINGS TO IMPLEMENT
     1. Instead of representing types of blocks as characters, represent them as classes with 
@@ -42,6 +44,21 @@ def blockHasNeighbor(location, *adj):
             if neighbor != '-':
                 return True
         return False
+    return True
+
+
+# guarantee that we can make stairs walkable by having enough neighboring blocks and air
+def stairsWalkable(location, *adj):
+    if location == 's':
+        num_b = 0
+        num_a = 0
+        num_walls = 6-len(adj)
+        for neighbor in adj:
+            if neighbor == 'b':
+                num_b += 1
+            elif neighbor == '-':
+                num_a += 1
+        return num_b+num_walls >= 2 and num_a >= 2
     return True
 
 # This constraint works! It ensures that the entire level is filled with stairs
@@ -83,11 +100,16 @@ def generate():
                 blockNeighbors.extend(adj)
                 # print("blockNeighbors: ", blockNeighbors)
                 # problem.addConstraint(blockHasNeighbor, blockNeighbors)
+                problem.addConstraint(stairsWalkable, blockNeighbors)
     
 
-    problem.addConstraint(SomeInSetConstraint(['s'], 5))
-    problem.addConstraint(SomeInSetConstraint(['-'], 70))
+    problem.addConstraint(SomeInSetConstraint(['s'], 4))
     # problem.addConstraint(SomeInSetConstraint(['b'], 5))
+    problem.addConstraint(SomeInSetConstraint(['-'], 35))
+    # problem.addConstraint(SomeInSetConstraint(['b'], 5))
+
+    print("done setting up, getting solution")
+    print()
     
     solution = problem.getSolution()
 
