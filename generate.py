@@ -1,8 +1,8 @@
 from constraint import *
 import escher
 
-world_width = 4
-world_length = 4
+world_width = 3
+world_length = 3
 world_height = 3
 
 world = [(x, y, z) for x in range(world_width) for y in range(world_length) for z in range(world_height)]
@@ -61,6 +61,15 @@ def stairsWalkable(location, *adj):
         return num_b+num_walls >= 2 and num_a >= 2
     return True
 
+# each layer has a percentage of air
+def layerHasAir(*layer):
+    print(layer)
+    num_a = 0
+    for block in layer:
+        if block == '-':
+            num_a += 1
+    return num_a >= 2*len(layer)/3
+
 # This constraint works! It ensures that the entire level is filled with stairs
 def onlyStairs(location):
     if location == 's':
@@ -92,9 +101,10 @@ def generate():
             for z in range(world_height):
                 problem.addVariable((x, y, z), escher.blocks)
 
-    for x in range(world_width):
+    for z in range(world_height):
+        problem.addConstraint(layerHasAir, [(a, b, z) for a in range(world_width) for b in range(world_length)])
         for y in range(world_length):
-            for z in range(world_height):
+            for x in range(world_width):
                 adj = [(a, b, c) for a in range(x-1, x+2) for b in range(y-1, y+2) for c in range(z-1, z+2) if inRange(x, y, z, a, b, c)]
                 blockNeighbors = [(x, y, z)]
                 blockNeighbors.extend(adj)
@@ -105,7 +115,7 @@ def generate():
 
     problem.addConstraint(SomeInSetConstraint(['s'], 4))
     # problem.addConstraint(SomeInSetConstraint(['b'], 5))
-    problem.addConstraint(SomeInSetConstraint(['-'], 35))
+    # problem.addConstraint(SomeInSetConstraint(['-'], 35))
     # problem.addConstraint(SomeInSetConstraint(['b'], 5))
 
     print("done setting up, getting solution")
