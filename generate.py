@@ -1,13 +1,14 @@
 from constraint import *
+import random
 import escher
 
-world_width = 3
-world_length = 3
-world_height = 3
+world_width = 6
+world_length = 6
+world_height = 8
 
 world = [(x, y, z) for x in range(world_width) for y in range(world_length) for z in range(world_height)]
 
-problem = Problem(RecursiveBacktrackingSolver())
+problem = Problem()
 
 
 '''
@@ -63,7 +64,6 @@ def stairsWalkable(location, *adj):
 
 # each layer has a percentage of air
 def layerHasAir(*layer):
-    print(layer)
     num_a = 0
     for block in layer:
         if block == '-':
@@ -101,6 +101,14 @@ def generate():
             for z in range(world_height):
                 problem.addVariable((x, y, z), escher.blocks)
 
+    # create random start to the level
+    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
+    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
+    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
+    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
+    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
+    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
+
     for z in range(world_height):
         problem.addConstraint(layerHasAir, [(a, b, z) for a in range(world_width) for b in range(world_length)])
         for y in range(world_length):
@@ -117,9 +125,6 @@ def generate():
     # problem.addConstraint(SomeInSetConstraint(['b'], 5))
     # problem.addConstraint(SomeInSetConstraint(['-'], 35))
     # problem.addConstraint(SomeInSetConstraint(['b'], 5))
-
-    print("done setting up, getting solution")
-    print()
     
     solution = problem.getSolution()
 
@@ -130,7 +135,8 @@ def generate():
                 # world[x][y][z] = solution[(x, y, z)]
                 print(solution[(x, y, z)], end='')
             print()
-        print()
+        if z+1 < world_height:
+            print('X')
 
 if __name__ == '__main__':
     generate()
