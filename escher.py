@@ -1,8 +1,8 @@
 # first a simple representation
 blocks = [
+    '-', # air
     'b', # solid cube
     's', # staircase
-    '-', # air
 ]
 
 

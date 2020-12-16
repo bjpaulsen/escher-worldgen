@@ -4,11 +4,11 @@ import escher
 
 world_width = 6
 world_length = 6
-world_height = 8
+world_height = 6
 
 world = [(x, y, z) for x in range(world_width) for y in range(world_length) for z in range(world_height)]
 
-problem = Problem()
+problem = Problem(RecursiveBacktrackingSolver())
 
 
 '''
@@ -40,11 +40,8 @@ def blockHasNeighbor(location, *adj):
     # print()
     # print("location: ", location)
     # print("adj: ", adj)
-    if location == 'b' or location == 's':
-        for neighbor in adj:
-            if neighbor != '-':
-                return True
-        return False
+    if location == 'b':
+        return 'b' in adj
     return True
 
 
@@ -52,14 +49,10 @@ def blockHasNeighbor(location, *adj):
 def stairsWalkable(location, *adj):
     if location == 's':
         num_b = 0
-        num_a = 0
-        num_walls = 6-len(adj)
         for neighbor in adj:
             if neighbor == 'b':
                 num_b += 1
-            elif neighbor == '-':
-                num_a += 1
-        return num_b+num_walls >= 2 and num_a >= 2
+        return num_b > 2
     return True
 
 # each layer has a percentage of air
@@ -68,7 +61,10 @@ def layerHasAir(*layer):
     for block in layer:
         if block == '-':
             num_a += 1
-    return num_a >= 2*len(layer)/3
+    return num_a >= 4*len(layer)/7
+
+def layerHasStair(*layer):
+    return 's' in layer
 
 # This constraint works! It ensures that the entire level is filled with stairs
 def onlyStairs(location):
@@ -102,15 +98,12 @@ def generate():
                 problem.addVariable((x, y, z), escher.blocks)
 
     # create random start to the level
-    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
-    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
-    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
-    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
-    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
-    problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
-
+    for j in range(80):
+        problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
+    
     for z in range(world_height):
-        problem.addConstraint(layerHasAir, [(a, b, z) for a in range(world_width) for b in range(world_length)])
+        # problem.addConstraint(layerHasAir, [(a, b, z) for a in range(world_width) for b in range(world_length)])
+        problem.addConstraint(layerHasStair, [(a, b, z) for a in range(world_width) for b in range(world_length)])
         for y in range(world_length):
             for x in range(world_width):
                 adj = [(a, b, c) for a in range(x-1, x+2) for b in range(y-1, y+2) for c in range(z-1, z+2) if inRange(x, y, z, a, b, c)]
@@ -121,9 +114,9 @@ def generate():
                 problem.addConstraint(stairsWalkable, blockNeighbors)
     
 
-    problem.addConstraint(SomeInSetConstraint(['s'], 4))
-    # problem.addConstraint(SomeInSetConstraint(['b'], 5))
-    # problem.addConstraint(SomeInSetConstraint(['-'], 35))
+    # problem.addConstraint(SomeInSetConstraint(['s'], 8))
+    # problem.addConstraint(SomeInSetConstraint(['b'], 36))
+    # problem.addConstraint(SomeInSetConstraint(['-'], 1))
     # problem.addConstraint(SomeInSetConstraint(['b'], 5))
     
     solution = problem.getSolution()
