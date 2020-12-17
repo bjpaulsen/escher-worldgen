@@ -37,9 +37,6 @@ OTHER THINGS TO IMPLEMENT
 #   - the current location being looked at. If it's a block, this constraint applies
 #   - a list of directly adjacent spaces. if any of these are non-air, the constraint passes
 def blockHasNeighbor(location, *adj):
-    # print()
-    # print("location: ", location)
-    # print("adj: ", adj)
     if location == 'b':
         return 'b' in adj
     return True
@@ -63,14 +60,9 @@ def layerHasAir(*layer):
             num_a += 1
     return num_a >= 4*len(layer)/7
 
+# guarantee that each vertical layer has at least 1 stair
 def layerHasStairs(*layer):
-    num_s = 0
-    for block in layer:
-        if block == 's':
-            num_s += 1
-        if num_s >= 1:
-            return True
-    return False
+    return 's' in layer
 
 # This constraint works! It ensures that the entire level is filled with stairs
 def onlyStairs(location):
@@ -116,7 +108,7 @@ def generate():
                 blockNeighbors = [(x, y, z)]
                 blockNeighbors.extend(adj)
                 # print("blockNeighbors: ", blockNeighbors)
-                # problem.addConstraint(blockHasNeighbor, blockNeighbors)
+                problem.addConstraint(blockHasNeighbor, blockNeighbors)
                 problem.addConstraint(stairsWalkable, blockNeighbors)
     
 
