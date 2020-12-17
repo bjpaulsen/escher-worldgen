@@ -52,7 +52,7 @@ def stairsWalkable(location, *adj):
         for neighbor in adj:
             if neighbor == 'b':
                 num_b += 1
-        return num_b > 2
+        return num_b >= 2
     return True
 
 # each layer has a percentage of air
@@ -63,8 +63,14 @@ def layerHasAir(*layer):
             num_a += 1
     return num_a >= 4*len(layer)/7
 
-def layerHasStair(*layer):
-    return 's' in layer
+def layerHasStairs(*layer):
+    num_s = 0
+    for block in layer:
+        if block == 's':
+            num_s += 1
+        if num_s >= 1:
+            return True
+    return False
 
 # This constraint works! It ensures that the entire level is filled with stairs
 def onlyStairs(location):
@@ -98,12 +104,12 @@ def generate():
                 problem.addVariable((x, y, z), escher.blocks)
 
     # create random start to the level
-    for j in range(80):
+    for j in range(50):
         problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
-    
+        
     for z in range(world_height):
         # problem.addConstraint(layerHasAir, [(a, b, z) for a in range(world_width) for b in range(world_length)])
-        problem.addConstraint(layerHasStair, [(a, b, z) for a in range(world_width) for b in range(world_length)])
+        problem.addConstraint(layerHasStairs, [(a, b, z) for a in range(world_width) for b in range(world_length)])
         for y in range(world_length):
             for x in range(world_width):
                 adj = [(a, b, c) for a in range(x-1, x+2) for b in range(y-1, y+2) for c in range(z-1, z+2) if inRange(x, y, z, a, b, c)]
@@ -114,10 +120,9 @@ def generate():
                 problem.addConstraint(stairsWalkable, blockNeighbors)
     
 
-    # problem.addConstraint(SomeInSetConstraint(['s'], 8))
+    problem.addConstraint(SomeInSetConstraint(['s'], 10))
     # problem.addConstraint(SomeInSetConstraint(['b'], 36))
     # problem.addConstraint(SomeInSetConstraint(['-'], 1))
-    # problem.addConstraint(SomeInSetConstraint(['b'], 5))
     
     solution = problem.getSolution()
 
