@@ -1,7 +1,9 @@
 from constraint import *
 import random
 import escher
+import sys
 
+# system defaults
 world_width = 6
 world_length = 6
 world_height = 6
@@ -10,32 +12,36 @@ world = [(x, y, z) for x in range(world_width) for y in range(world_length) for 
 
 problem = Problem(RecursiveBacktrackingSolver())
 
+'''
+GENERATE.PY
+
+This program generates a 3D Escher-like World that can be imported into a Unity scene.
+Using the command line interface, you can specify the dimensions, block density, stair behavior,
+and other placement rules. Other constraints are static to ensure certain world qualities.
+
+Each world generated will be different, starting with a semi-random base. Constraints on top
+of that base create the rest of the world.
 
 '''
-definitions:
-    neighbor - each block has 6 neighbors (unless it's against a wall)
 
-CONSTRAINT IDEAS (Test and see what works well)
-    1. Solid blocks must have a neighbor (can't be free floating)
-    2. Stairs must have at least 2 neighbors (places to walk to and from)
-    3. Stairs must have at least 2 adjacent neighboring air blocks (space to walk in)
-    4. Some minimum amount of air, blocks, stairs, etc
-
-    * Stairs cannot be directly adjacent (cardinal) to other stairs?
-
-OTHER THINGS TO IMPLEMENT
-    1. Instead of representing types of blocks as characters, represent them as classes with 
-    some basic information about the block.
-        - Stairs have info about which sides are walkable
-        - solid blocks or bridges etc. might have info about which decorations they have
-'''
+command_line_interface = '''
+        usage:
+        \t\t\t[pythonversion] generate.py [width] [length] [height] [density] (optional constraints...)
+        
+        optional constraints:
+        \t\t\tlayerHasStairs  \t - require each layer to have at least 1 stair (recommended)
+        \t\t\tlayerHasAir     \t - require each layer to have a percentage of air (may be slow)
+        \t\t\tblockHasNeighbor\t - prevent floating blocks, encourage navigable paths (may be slow)
+        
+        note: all arguments are optional, but must be in order
+        '''
 
 # The following constraints are for testing / experimenting purposes
 
 # blockHasNeighbor ensures that each block has at least one neighboring non-air space.
 # inputs: 
 #   - the current location being looked at. If it's a block, this constraint applies
-#   - a list of directly adjacent spaces. if any of these are non-air, the constraint passes
+#   - a list of directly adjacent spaces. if any of these are blocks, the constraint passes
 def blockHasNeighbor(location, *adj):
     if location == 'b':
         return 'b' in adj
@@ -52,23 +58,20 @@ def stairsWalkable(location, *adj):
         return num_b >= 2
     return True
 
+
 # each layer has a percentage of air
 def layerHasAir(*layer):
     num_a = 0
     for block in layer:
         if block == '-':
             num_a += 1
-    return num_a >= 4*len(layer)/7
+    return num_a >= len(layer)/2
+
 
 # guarantee that each vertical layer has at least 1 stair
 def layerHasStairs(*layer):
     return 's' in layer
 
-# This constraint works! It ensures that the entire level is filled with stairs
-def onlyStairs(location):
-    if location == 's':
-        return True
-    return False
 
 # checks if an adjacent position is in the world
 # x y z is a legal position
@@ -87,6 +90,8 @@ def inRange(x, y, z, a, b, c):
         return False
     return True
 
+
+# main method to generate a level
 def generate():
 
     # setup the 3D grid of locations to be filled in
@@ -95,38 +100,66 @@ def generate():
             for z in range(world_height):
                 problem.addVariable((x, y, z), escher.blocks)
 
+    # ~23% of volume should be blocks unless otherwise specified
+    density = .23148
+
+    # input density as 4th argument (float between 0 and 1)
+    if len(sys.argv) >= 5:
+        density = float(sys.argv[4])
+        
     # create random start to the level
-    for j in range(50):
+    starter_blocks = round(density * world_width * world_length * world_height)
+    for j in range(starter_blocks):
         problem.addConstraint(InSetConstraint(['b']), [(random.randint(0, world_width-1), random.randint(0, world_length-1), random.randint(0, world_height-1))])
         
+    # add positional constraints to stairs, blocks, air
     for z in range(world_height):
-        # problem.addConstraint(layerHasAir, [(a, b, z) for a in range(world_width) for b in range(world_length)])
-        problem.addConstraint(layerHasStairs, [(a, b, z) for a in range(world_width) for b in range(world_length)])
+        
+        # require each layer to have a percentage of air if specified
+        if 'layerHasAir' in sys.argv:
+            problem.addConstraint(layerHasAir, [(a, b, z) for a in range(world_width) for b in range(world_length)])
+        
+        # require each layer to have stairs if specified
+        if 'layerHasStairs' in sys.argv:
+            problem.addConstraint(layerHasStairs, [(a, b, z) for a in range(world_width) for b in range(world_length)])
+        
         for y in range(world_length):
             for x in range(world_width):
                 adj = [(a, b, c) for a in range(x-1, x+2) for b in range(y-1, y+2) for c in range(z-1, z+2) if inRange(x, y, z, a, b, c)]
                 blockNeighbors = [(x, y, z)]
                 blockNeighbors.extend(adj)
-                # print("blockNeighbors: ", blockNeighbors)
-                problem.addConstraint(blockHasNeighbor, blockNeighbors)
+                
+                # prevent floating blocks if specified
+                if 'blockHasNeighbor' in sys.argv:
+                    problem.addConstraint(blockHasNeighbor, blockNeighbors)
+                
+                # always use stairsWalkable, essential constraint
                 problem.addConstraint(stairsWalkable, blockNeighbors)
     
-
-    problem.addConstraint(SomeInSetConstraint(['s'], 10))
-    # problem.addConstraint(SomeInSetConstraint(['b'], 36))
-    # problem.addConstraint(SomeInSetConstraint(['-'], 1))
-    
+    # create a level that satisfies the constraints, if possible
     solution = problem.getSolution()
 
+    # print the level in a format we can import into Unity
     world = []
     for z in range(world_height):
         for y in range(world_length):
             for x in range(world_width):
-                # world[x][y][z] = solution[(x, y, z)]
                 print(solution[(x, y, z)], end='')
             print()
         if z+1 < world_height:
             print('X')
 
+
+# start of program, command line interface
 if __name__ == '__main__':
-    generate()
+    if len(sys.argv) == 2 and (sys.argv[1] == 'help' or sys.argv[1] == '--help'):
+        print(command_line_interface)
+    else:
+        # command line inputs determine level size
+        if len(sys.argv) >= 2 and sys.argv[1].isdigit():
+            world_width = int(sys.argv[1])
+            if len(sys.argv) >= 3 and sys.argv[2].isdigit():
+                world_length = int(sys.argv[2])
+                if len(sys.argv) >= 4 and sys.argv[3].isdigit():
+                    world_height = int(sys.argv[3])
+        generate()
